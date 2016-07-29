@@ -510,9 +510,15 @@ static inline void scrypt_core(uint32_t *X, uint32_t *V, int N)
 #define scrypt_best_throughput() 1
 #endif
 
+#define SCRYPT_BUFFER_SIZE (131072 + 63) // YAC
+
 unsigned char *scrypt_buffer_alloc(int N)
 {
 	return malloc((size_t)N * SCRYPT_MAX_WAYS * 128 + 63);
+}
+
+unsigned char *scrypt_jane_buffer_alloc() {
+    return malloc(SCRYPT_BUFFER_SIZE);
 }
 
 static void scrypt_1024_1_1_256(const uint32_t *input, uint32_t *output,

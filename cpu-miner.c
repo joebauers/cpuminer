@@ -102,12 +102,14 @@ struct workio_cmd {
 
 enum algos {
 	ALGO_SCRYPT,		/* scrypt(1024,1,1) */
+	ALGO_SCRYPT_JANE,	/* scrypt-jane with n-factor */
 	ALGO_SHA256D,		/* SHA-256d */
 };
 
 static const char *algo_names[] = {
 	[ALGO_SCRYPT]		= "scrypt",
-	[ALGO_SHA256D]		= "sha256d",
+	[ALGO_SCRYPT_JANE]	= "scrypt-jane",
+        [ALGO_SHA256D]		= "sha256d"
 };
 
 bool opt_debug = false;
@@ -172,6 +174,7 @@ Options:\n\
   -a, --algo=ALGO       specify the algorithm to use\n\
                           scrypt    scrypt(1024, 1, 1) (default)\n\
                           scrypt:N  scrypt(N, 1, 1)\n\
+                          scrypt-jane  scrypt-jane\n\
                           sha256d   SHA-256d\n\
   -o, --url=URL         URL of mining server\n\
   -O, --userpass=U:P    username:password pair for mining server\n\
@@ -1054,7 +1057,7 @@ static void stratum_gen_work(struct stratum_ctx *sctx, struct work *work)
 		free(xnonce2str);
 	}
 
-	if (opt_algo == ALGO_SCRYPT)
+	if (opt_algo == ALGO_SCRYPT || opt_algo == ALGO_SCRYPT_JANE)
 		diff_to_target(work->target, sctx->job.diff / 65536.0);
 	else
 		diff_to_target(work->target, sctx->job.diff);
@@ -1092,6 +1095,15 @@ static void *miner_thread(void *userdata)
 		scratchbuf = scrypt_buffer_alloc(opt_scrypt_n);
 		if (!scratchbuf) {
 			applog(LOG_ERR, "scrypt buffer allocation failed");
+			pthread_mutex_lock(&applog_lock);
+			exit(1);
+		}
+	}
+
+        if (opt_algo == ALGO_SCRYPT_JANE) {
+        scratchbuf = scrypt_jane_buffer_alloc();
+		if (!scratchbuf) {
+			applog(LOG_ERR, "scrypt-jane buffer allocation failed");
 			pthread_mutex_lock(&applog_lock);
 			exit(1);
 		}
@@ -1151,6 +1163,11 @@ static void *miner_thread(void *userdata)
 			case ALGO_SCRYPT:
 				max64 = opt_scrypt_n < 16 ? 0x3ffff : 0x3fffff / opt_scrypt_n;
 				break;
+
+            case ALGO_SCRYPT_JANE:
+                max64 = 0x1LL; // TODO test efficiency https://github.com/grokouser/cpuminer/commit/ba107b006595e6fbc503fcb52ce4bd61c1d9075d
+                break;
+
 			case ALGO_SHA256D:
 				max64 = 0x1fffff;
 				break;
@@ -1169,6 +1186,11 @@ static void *miner_thread(void *userdata)
 		case ALGO_SCRYPT:
 			rc = scanhash_scrypt(thr_id, work.data, scratchbuf, work.target,
 			                     max_nonce, &hashes_done, opt_scrypt_n);
+			break;
+
+		case ALGO_SCRYPT_JANE:
+			rc = scanhash_scrypt_jane(thr_id, work.data, work.target,
+			                     max_nonce, &hashes_done);
 			break;
 
 		case ALGO_SHA256D:
@@ -1191,7 +1213,7 @@ static void *miner_thread(void *userdata)
 			pthread_mutex_unlock(&stats_lock);
 		}
 		if (!opt_quiet) {
-			sprintf(s, thr_hashrates[thr_id] >= 1e6 ? "%.0f" : "%.2f",
+            sprintf(s, thr_hashrates[thr_id] >= 1e6 ? "%.0f" : "%.6f",
 				1e-3 * thr_hashrates[thr_id]);
 			applog(LOG_INFO, "thread %d: %lu hashes, %s khash/s",
 				thr_id, hashes_done, s);
@@ -1201,7 +1223,7 @@ static void *miner_thread(void *userdata)
 			for (i = 0; i < opt_n_threads && thr_hashrates[i]; i++)
 				hashrate += thr_hashrates[i];
 			if (i == opt_n_threads) {
-				sprintf(s, hashrate >= 1e6 ? "%.0f" : "%.2f", 1e-3 * hashrate);
+                sprintf(s, hashrate >= 1e6 ? "%.0f" : "%.6f", 1e-3 * hashrate);
 				applog(LOG_INFO, "Total: %s khash/s", s);
 			}
 		}
