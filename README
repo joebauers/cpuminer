@@ -1,10 +1,8 @@
-This is a multi-threaded CPU miner for Litecoin and Bitcoin,
-fork of Jeff Garzik's reference cpuminer.
+This is a multi-threaded CPU miner for Yacoin. Fork of Jeff Garzik's and pooler's reference cpuminer.
 
 License: GPLv2.  See COPYING for details.
 
-Downloads:  https://sourceforge.net/projects/cpuminer/files/
-Git tree:   https://github.com/pooler/cpuminer
+Git tree:   https://github.com/joebauers/cpuminer
 
 Dependencies:
 	libcurl			http://curl.haxx.se/libcurl/
@@ -57,6 +55,9 @@ Architecture-specific notes:
 		The miner uses the VIA Padlock Hash Engine where available.
 
 Usage instructions:  Run "minerd --help" to see options.
+
+Example for Yacoin: 
+./minerd --algo=scrypt-jane --url=poolurl --userpass=username:userpassword  
 
 Connecting through a proxy:  Use the --proxy option.
 To use a SOCKS proxy, add a socks4:// or socks5:// prefix to the proxy host.

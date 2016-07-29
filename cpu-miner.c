@@ -107,9 +107,9 @@ enum algos {
 };
 
 static const char *algo_names[] = {
-	[ALGO_SCRYPT]		= "scrypt",
+	[ALGO_SCRYPT]		   = "scrypt",
 	[ALGO_SCRYPT_JANE]	= "scrypt-jane",
-        [ALGO_SHA256D]		= "sha256d"
+   [ALGO_SHA256D]		   = "sha256d"
 };
 
 bool opt_debug = false;
@@ -172,8 +172,8 @@ static char const usage[] = "\
 Usage: " PROGRAM_NAME " [OPTIONS]\n\
 Options:\n\
   -a, --algo=ALGO       specify the algorithm to use\n\
-                          scrypt    scrypt(1024, 1, 1) (default)\n\
-                          scrypt:N  scrypt(N, 1, 1)\n\
+                          scrypt       scrypt(1024, 1, 1) (default)\n\
+                          scrypt:N     scrypt(N, 1, 1)\n\
                           scrypt-jane  scrypt-jane\n\
                           sha256d   SHA-256d\n\
   -o, --url=URL         URL of mining server\n\
@@ -1164,9 +1164,9 @@ static void *miner_thread(void *userdata)
 				max64 = opt_scrypt_n < 16 ? 0x3ffff : 0x3fffff / opt_scrypt_n;
 				break;
 
-            case ALGO_SCRYPT_JANE:
+         case ALGO_SCRYPT_JANE:
                 max64 = 0x1LL; // TODO test efficiency https://github.com/grokouser/cpuminer/commit/ba107b006595e6fbc503fcb52ce4bd61c1d9075d
-                break;
+            break;
 
 			case ALGO_SHA256D:
 				max64 = 0x1fffff;
